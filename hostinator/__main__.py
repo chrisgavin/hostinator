@@ -97,10 +97,9 @@ def main() -> None:
 	logging.basicConfig(level=log_level)
 	try:
 		update_hosts(generate_hosts_file_snippet())
-		for _ in _DOCKER.events():
-			# Update the hosts file every time an event occurs.
-			# We could be more specific, but it's a pretty cheap operation.
-			update_hosts(generate_hosts_file_snippet())
+		for event in _DOCKER.events(decode=True):
+			if event["Type"] == "container" and event["status"] in ["start", "die"]:
+				update_hosts(generate_hosts_file_snippet())
 	except KeyboardInterrupt:
 		pass
 	finally:
