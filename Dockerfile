@@ -8,5 +8,5 @@ RUN pip3 install "/tmp/hostinator/"
 
 VOLUME "/var/run/docker.sock"
 VOLUME "/mnt/etc/"
-ENV "HOSTS_DIR" "/mnt/etc/"
+ENV "HOSTINATOR_HOSTS_DIR" "/mnt/etc/"
 ENTRYPOINT ["hostinator"]

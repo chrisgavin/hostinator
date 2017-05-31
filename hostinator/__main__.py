@@ -8,12 +8,17 @@ import docker
 
 _LOG = logging.getLogger(__name__)
 _DOCKER = docker.from_env()
-_MARKER = "Hostinator Managed Aliases"
+
+# Config Variables
+_HOSTINATOR_VERBOSITY = os.environ.get("HOSTINATOR_VERBOSITY", "INFO")
+_HOSTINATOR_NETWORK = os.environ.get("HOSTINATOR_NETWORK", None)
+_HOSTINATOR_HOSTS_DIR = os.environ.get("HOSTINATOR_HOSTS_DIR", "/etc/")
+
+_MARKER = "Hostinator Managed Aliases" + (" (%s)" % _HOSTINATOR_NETWORK if _HOSTINATOR_NETWORK else "")
 _START_MARKER = "# " + _MARKER
 _END_MARKER = "# End " + _MARKER
-_HOSTS_DIRECTORY = os.environ.get("HOSTS_DIR", "/etc/")
-_HOSTS_FILE = os.path.join(_HOSTS_DIRECTORY, "hosts")
-_SWAP_FILE = os.path.join(_HOSTS_DIRECTORY, ".hosts.swp")
+_HOSTS_FILE = os.path.join(_HOSTINATOR_HOSTS_DIR, "hosts")
+_SWAP_FILE = os.path.join(_HOSTINATOR_HOSTS_DIR, ".hosts.swp")
 
 def get_host_line(ip: str, aliases: Set[str]) -> str:
 	return "%s %s" % (ip, " ".join(aliases))
@@ -24,6 +29,11 @@ def get_container_hosts(container: docker.api.container.ContainerConfig) -> List
 	# They can therefore only be assigned to one IP.
 	container_specific_aliases = [container.attrs["Config"]["Hostname"], container.name]
 	for network in container.attrs["NetworkSettings"]["Networks"].values():
+		if _HOSTINATOR_NETWORK is not None:
+			network_details = _DOCKER.networks.get(network["NetworkID"])
+			if _HOSTINATOR_NETWORK != network_details.name:
+				_LOG.debug("Ignoring host on network \"%s\" because it isn't \"%s\".", network_details.name, _HOSTINATOR_NETWORK)
+				continue
 		ip = network["IPAddress"]
 		aliases = set(network["Aliases"] or [])
 		aliases.update(container_specific_aliases)
@@ -83,12 +93,16 @@ def update_hosts(append: List[str]) -> None:
 	_LOG.info("Hosts file updated.")
 
 def main() -> None:
+	log_level = logging.getLevelName(_HOSTINATOR_VERBOSITY)
+	logging.basicConfig(level=log_level)
 	try:
 		update_hosts(generate_hosts_file_snippet())
 		for _ in _DOCKER.events():
 			# Update the hosts file every time an event occurs.
 			# We could be more specific, but it's a pretty cheap operation.
 			update_hosts(generate_hosts_file_snippet())
+	except KeyboardInterrupt:
+		pass
 	finally:
 		update_hosts([])
 

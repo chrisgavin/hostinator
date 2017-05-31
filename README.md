@@ -7,6 +7,7 @@ Docker Compose has a really useful feature that enables you to access a containe
 ## Features
 * Detects new Docker containers dynamically by monitoring the Docker socket for events.
 * Puts your hosts file back to how it was originally on exit.
+* Limit Docker network to search for hosts with `HOSTINATOR_NETWORK` environment variable.
 
 ## Docker Image
 This project is availiable as a Docker image at [`chrisgavin/hostinator`](https://hub.docker.com/r/chrisgavin/hostinator/). You can use it like so:
@@ -26,4 +27,6 @@ hostinator:
   volumes:
     - "/var/run/docker.sock:/var/run/docker.sock"
     - "/etc/:/mnt/etc/"
+  environment:
+    - "HOSTINATOR_NETWORK=myproject_default"
 ```
