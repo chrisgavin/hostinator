@@ -85,7 +85,7 @@ def update_hosts(append: List[str]) -> None:
 def main() -> None:
 	try:
 		update_hosts(generate_hosts_file_snippet())
-		for event in _DOCKER.events():
+		for _ in _DOCKER.events():
 			# Update the hosts file every time an event occurs.
 			# We could be more specific, but it's a pretty cheap operation.
 			update_hosts(generate_hosts_file_snippet())
