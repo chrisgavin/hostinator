@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import logging
 from typing import Set, List, TextIO
 import shutil
@@ -10,8 +11,9 @@ _DOCKER = docker.from_env()
 _MARKER = "Hostinator Managed Aliases"
 _START_MARKER = "# " + _MARKER
 _END_MARKER = "# End " + _MARKER
-_HOSTS_FILE = "/etc/hosts"
-_SWAP_FILE = "/etc/.hosts.swp"
+_HOSTS_DIRECTORY = os.environ.get("HOSTS_DIR", "/etc/")
+_HOSTS_FILE = os.path.join(_HOSTS_DIRECTORY, "hosts")
+_SWAP_FILE = os.path.join(_HOSTS_DIRECTORY, ".hosts.swp")
 
 def get_host_line(ip: str, aliases: Set[str]) -> str:
 	return "%s %s" % (ip, " ".join(aliases))
