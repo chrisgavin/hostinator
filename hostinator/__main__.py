@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
+import sys
 import logging
+import signal
 from typing import Set, List, TextIO
 import shutil
 import hashlib
@@ -92,10 +94,14 @@ def update_hosts(append: List[str]) -> None:
 	shutil.move(_SWAP_FILE, _HOSTS_FILE)
 	_LOG.info("Hosts file updated.")
 
+def sigterm_handler(*_):
+	sys.exit(0)
+
 def main() -> None:
 	log_level = logging.getLevelName(_HOSTINATOR_VERBOSITY)
 	logging.basicConfig(level=log_level)
 	try:
+		signal.signal(signal.SIGTERM, sigterm_handler)
 		update_hosts(generate_hosts_file_snippet())
 		for event in _DOCKER.events(decode=True):
 			if event["Type"] == "container" and event["status"] in ["start", "die"]:
